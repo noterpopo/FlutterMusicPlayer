@@ -1,44 +1,78 @@
-import 'package:meta/meta.dart';
+import 'dart:async';
 
-final demoPlaylist = new DemoPlaylist(
-  songs: [
-    new DemoSong(
-      audioUrl: 'http://m10.music.126.net/20180918175821/0c251fb84af613d5146d66d6235d9ae2/ymusic/6829/d60c/b0d4/016b68b477333c1a9350fc2acacf8a3c.mp3',
-      albumArtUrl: 'https://p1.music.126.net/7Byt265s3FEu0SJvNp4ORQ==/109951163464499716.jpg?param=200y200',
-      songTitle: '肥宅群侠传(Live)',
-      artist: '上海彩虹室内合唱团',
-    ),
-    new DemoSong(
-      audioUrl: 'http://m10.music.126.net/20180918175918/6c80267bcb7c86efb7dab19fcb7cde4a/ymusic/4f98/08d9/7e1d/db7ecc48be6662e7f16a2ea07086409d.mp3',
-      albumArtUrl: 'https://p1.music.126.net/EdTfeOrqoB79jg3f0CGCqw==/109951163036911274.jpg?param=200y200',
-      songTitle: '放弃治疗',
-      artist: 'Serrini',
-    ),
-  ],
-);
+import 'package:meta/meta.dart';
+import 'dart:io';
+import 'dart:convert';
+
+var demoPlaylist = new DemoPlaylist();
 
 class DemoPlaylist {
 
-  final List<DemoSong> songs;
 
-  DemoPlaylist({
-    @required this.songs,
-  });
+  List<DemoSong> songs=new List<DemoSong>();
+
+  Future<void> getFavSongs() async{
+    var url='http://szugreenwind.club:3000/playlist/detail?id=51061516';
+    var httpClient=new HttpClient();
+
+    try{
+      var request=await httpClient.getUrl(Uri.parse(url));
+      var response=await request.close();
+      if(response.statusCode==HttpStatus.OK){
+        var jsondata=await response.transform(utf8.decoder).join();
+        var data=json.decode(jsondata);
+        var musicUrl='http://szugreenwind.club:3000/music/url?id=';
+        for(int i=0;i<10;++i){
+          if(i==9){
+            musicUrl=musicUrl+data['playlist']['tracks'][i]['id'].toString();
+          }else{
+            musicUrl=musicUrl+data['playlist']['tracks'][i]['id'].toString()+',';
+          }
+          songs.add(new DemoSong(audioUrl: '', albumArtUrl: data['playlist']['tracks'][i]['al']['picUrl']+'?param=200y200', songTitle: data['playlist']['tracks'][i]['name'], artist: data['playlist']['tracks'][i]['ar'][0]['name'],id: data['playlist']['tracks'][i]['id']));
+        }
+
+        var musicRequest=await httpClient.getUrl(Uri.parse(musicUrl));
+        var musicRespone=await musicRequest.close();
+        if(musicRespone.statusCode==HttpStatus.OK){
+          var musicjsondata=await musicRespone.transform(utf8.decoder).join();
+          var musicdata=json.decode(musicjsondata);
+          for(int i=0;i<10;++i){
+            for(int j=0;j<10;++j){
+              if(musicdata['data'][i]['id']==songs.elementAt(j).id){
+                songs.elementAt(j).audioUrl=musicdata['data'][i]['url'];
+                break;
+              }else{
+                continue;
+              }
+            }
+          }
+        }
+
+      }
+    }catch(e){
+      print(e.toString());
+      songs.add(new DemoSong(audioUrl: '', albumArtUrl: '', songTitle: 'NonNetWork', artist: 'NonNetWork'));
+    }
+  }
+
 
 }
 
+
 class DemoSong {
 
-  final String audioUrl;
+  String audioUrl;
   final String albumArtUrl;
   final String songTitle;
   final String artist;
+  final int id;
 
   DemoSong({
     @required this.audioUrl,
     @required this.albumArtUrl,
     @required this.songTitle,
     @required this.artist,
+    this.id
   });
 
 }

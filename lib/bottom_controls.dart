@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_music_player/songs.dart';
-import 'package:flutter_music_player/teme.dart';
+import 'package:flutter_music_player/theme.dart';
 import 'package:fluttery_audio/fluttery_audio.dart';
 class BottomControl extends StatelessWidget {
   const BottomControl({
